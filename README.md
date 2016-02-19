@@ -100,6 +100,24 @@ Wer seine Homeverzeichnisse in ein extra Dataset legen will (Zwecks besserer Tre
 sudo zfs create rpool/HOME
 sudo zfs create rpool/HOME/home-1
 ```
+### Optional: Einschalten der Kompression und deaktivieren der "_Access Time_"
+
+Wer möchte kann die transparente Kompression in ZFS aktivieren. Dies kostet auf modernen Rechnern fast keine Rechenzeit und spart je nach Inhalt des Dateisystems eine Menge Platz:
+
+```
+sudo zfs set compression=lz4 rpool
+```
+
+Dieser Befehl aktiviert für alle Datasets innerhalb von "rpool" die Kompression. Wer das nicht möchte, kann sie auch für die einzelnen Datasets ändern (Dabei greift das Prinzip der Vererbung).
+
+Um Schreibzugriffe zu beschleuningen, empfiehlt es sich die "Access Time" des Dateisystems zu deaktivieren. Diese Option entspricht in etwa der Option "relatime" bei Ext2/3/4:
+
+```
+sudo zfs set atime=off rpool
+```
+
+__Fortsetzung:__
+
 ZFS mountet nach dem Anlegen der Datasets diese direkt unter "/mnt/ROOT" und "/mnt/ROOT/ubuntu-1", usw. Das ist natürlich unschön, für ein normales Produktivsystem. Man muss also den Mountpoint der einzelnen Datasets ändern.
 
 Zuerst werden alle eingebundenen Dateisysteme wieder ausgehängt:
@@ -117,7 +135,7 @@ sudo zfs set mountpoint=none rpool/HOME
 sudo zfs set mountpoint=/home rpool/HOME/home-1
 ```
 
-Wichtig sind vor allem die beiden Befehle mit "mountpoint=none". Mit diesen wird verhindert, dass die beiden untersten Datasets gemountet werden.
+Wichtig sind vor allem die beiden Befehle mit "mountpoint=none". Mit diesen wird verhindert, dass die beiden untersten Datasets gemountet werden. "_zfs_" wird beim Setzen der Mountpoints mit ziemlicher Sicherheit eine Warnung ausgeben, dass die gesetzten Mountpoints schon existieren bzw. nicht leer sind. Das ist in Ordnung und kann an dieser Stelle ignoriert werden.
 
 __Hinweis:__
 
@@ -156,7 +174,9 @@ Dazu muss der Pool erst importiert werden:
 sudo zpool import -R /mnt rpool
 ```
 
-Der Verzeichnisbaum sollte beim Aufruf von "_mount_" in etwa dann so ausschauen (Falls man die Anleitung exakt ausgeführt hat):
+Die Option "_-R_" legt dabei den untersten Mountpoint des gesamten Pools fest. Hätten wir weiter oben die Mountpoints der Datasets nicht geändert, würde jetzt "_rpool_" unter "__/mnt_" liegen, "_rpool/ROOT_" unter "_/mnt/rpool/ROOT_", usw. Dadurch das wir die Mountpoints verändert haben, wird nur noch "_rpool/ROOT/ubuntu-1_" in "_/mnt_" eingebunden. Andere Datasets werden dabei ebenfalls eingebunden (z.B. "_rpool/HOME/home-1_" in "_/mnt/home_").
+
+Der Verzeichnisbaum sollte beim Aufruf von "_mount_" dann in etwa so ausschauen (Falls man die Anleitung exakt ausgeführt hat):
 
 ```
 rpool/ROOT/ubuntu-1 on /mnt type zfs (rw,relatime,xattr,noacl)
@@ -181,12 +201,11 @@ mount --bind /sys  /mnt/sys
 chroot /mnt /bin/bash --login
 ```
 
-Wer das ältere BIOS-Booten verwendet, sollte an dieser Stelle die Grub2-Boot-Partition in den Verzeichnisbaum einbinden:
+Wer das ältere BIOS-Boot verwendet, sollte an dieser Stelle die Grub2-Boot-Partition in den Verzeichnisbaum einbinden:
 
 ```
 sudo mount /dev/sda1 /boot/grub
 ```
-
 
 In der _chroot_-Umgebung installiert man als allererstes die beiden benötigten ZFS-Pakete
 
@@ -295,5 +314,5 @@ Danach sollte Grub das System problemlos starten. Wenn das System hochgefahren i
 
 ### System bleibt mit einer Busybox-Shell stehen
 
-Es kann sein, dass es beim ersten Start aus irgendwelchen Gründen in einer Busybox-Shell stehen bleibt. Das liegt wahrscheinlich daran, dass man vergessen hat den Pool am Ende zu exportieren oder die Grub-Konfiguration wurde nicht richtig aktualisiert. Jedenfalls bleibt einem nichts anderes übrig als nochmals die Live-CD zu benutzen und die chroot-Umgebung nochmals zu erstellen. Daten sind dabei aber nicht verloren gegangen.
+Es kann sein, dass es beim ersten Start aus irgendwelchen Gründen in einer Busybox-Shell stehen bleibt. Das liegt wahrscheinlich daran, dass man vergessen hat den Pool am Ende zu exportieren oder die Grub-Konfiguration wurde nicht richtig aktualisiert. Jedenfalls bleibt einem nichts anderes übrig als nochmals die Live-CD zu benutzen und die chroot-Umgebung nochmals zu erstellen und die Anleitung ab dem Importieren des Pools nochmals abzuarbeiten. Daten sind dabei aber nicht verloren gegangen.
 
