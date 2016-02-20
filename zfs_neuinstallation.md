@@ -52,7 +52,7 @@ ___Hinweis:___
 
 _Wer noch den normalen Bios-Boot verwendet, sollte eine separate Boot-Partition für Grub2 einrichten und mit Ext2 oder Ext3 formatieren. Siehe dazu auch die oben verlinkte Anleitung._
 
-Die Id des Dateisystems kann dabei auf "_Linux_" bzw. "_82_" belassen werden. Wer noch eine Swap-Partition benötigt, kann diese in ein sogenanntes "_zvol_" legen (Siehe weiter unten).
+Die Id des Dateisystems kann dabei auf "_Linux_" bzw. "_82_" belassen werden. Wer noch eine Swap-Partition benötigt, sollte diese in eine separate Partition legen, da es zu einer Race-Condition im Zusammenhang mit systemd kommt.
 
 Jetzt wird der eigentliche "_zpool_" angelegt:
 ```
@@ -90,31 +90,6 @@ Wer seine Homeverzeichnisse in ein extra Dataset legen will (Zwecks besserer Tre
 sudo zfs create rpool/HOME
 sudo zfs create rpool/HOME/home-1
 ```
-
-### Swap-Partition in einem ZVOL
-
-ZFS bietet auch die Möglichkeit anstatt eines ZFS-Dateisystems eine Gerätedatei bereitzustellen, welche dann ein beliebiges Dateisystem beinhalten kann. Ein Beispiel ist z.B. eine SWAP-Partition.
-
-```
-sudo zfs create -V 16G rpool/ROOT/swap
-```
-
-Dieses Dateisystem taucht nach dem Anlegen als Gerätedatei unter "_/dev_" auf:
-
-```
-lrwxrwxrwx 1 root root 12 Feb 20 19:23 /dev/zvol/rpool/ROOT/swap -> ../../../zd0
-```
-Diese Gerätedatei kann man jetzt wie gewohnt mit "_mkswap_" on "_swapon_" behandeln:
-```
-sudo mkswap /dev/zvol/rpool/ROOT/swap
-sudo swapon /dev/zvol/rpool/ROOT/swap
-```
-Die Swap-Partition __muss__ in die _fstab_-Datei aufgenommen werden:
-
-```
-UUID=9a328c8d-b915-4ef7-8224-5b05a66a6d79       none    swap    sw      0       0
-```
-Ich habe die UUID benutzt. Diese wird von "_mkswap_" beim Erzeugen des Swap-Bereichs angezeigt.
 
 ### Optional: Einschalten der Kompression und deaktivieren der "_Access Time_"
 
