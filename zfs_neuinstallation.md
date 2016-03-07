@@ -109,6 +109,7 @@ sudo zfs set atime=off rpool
 Danach setzt man für jedes Dataset gesondert seinen Mountpoint:
 
 ```
+sudo zfs set mountpoint=none rpool
 sudo zfs set mountpoint=none rpool/ROOT
 sudo zfs set mountpoint=/ rpool/ROOT/ubuntu-1
 sudo zfs set mountpoint=none rpool/HOME
@@ -195,6 +196,8 @@ In der _chroot_-Umgebung installiert man als allererstes die beiden benötigten 
 apt-get install zfsutils-linux zfs-initramfs
 ```
 
+Falls sich die Pakete nicht installieren lassen, muss die "Universe"-Quelle aktiviert werden.
+
 Danach geht es an die fstab-Datei. Da ZFS selbst seine Mountpoints verwaltet ist die Datei nur noch Nicht-ZFS-Dateisysteme notwendig. In meinem Fall ist diese minimal, da sie nur noch den Mountpoint für die EFI-Partition enthält:
 
 ```
@@ -233,6 +236,11 @@ cd /usr/lib/ubiquity/tzsetup
 cd /usr/lib/ubiquity/localechooser
 ./locale-chooser
 ./post-base-installer
+```
+Da es hier zu Fehlermeldungen kommt, ist es noch wichtig, die Sprache in der Datei "_/etc/default/locale_" zu setzen:
+
+```
+LANG=de.DE-UTF-8
 ```
 
 ### Tastatur auf der Konsole einrichten
@@ -299,6 +307,10 @@ Normalerweise liegen die Gerätedateien mit dem vollständigen Namen unter "_/de
 sudo ln -s /dev/sdXY /dev/Name_des_Geräts_aus_der_Fehlermeldung
 ```
 
+__Wichtiger Hinweis:__
+
+_Falls es zu einer Fehlermeldung kommt, dass "_/dev/zfs_" nicht gefunden werden kann, kann man sich den Rest der Grub-Anleitung an dieser Stelle sparen. Ich habe leider keine Ahnung wie man den Fehler umgehen kann. Man muss beim ersten Booten deshalb die Grub-Kommandozeile des USB-Sticks benutzen und die unten stehende Anleitung befolgen._
+
 "_/dev/sdXY_" wird dabei gegen die Gerätedatei ersetzt, die dem Partitionseintrag des Pools entspricht (Bei mir "_/dev/sda2_").
 
 Nach Anlegen des Symlinks sollte "_grub-probe /_" das Wort "_ZFS_" ausspucken.
@@ -339,10 +351,10 @@ Sauberes unmounten aller Dateisysteme und exportieren des angelegten zpools.
 
 ```
 exit
-sudo umount /dev/pts
-sudo umount /dev/
-sudo umount /proc
-sudo umount /sys
+sudo umount /mnt//dev/pts
+sudo umount /mnt//dev/
+sudo umount /mnt//proc
+sudo umount /mnt//sys
 sudo umount /mnt/home
 sudo umount /mnt/boot/efi
 sudo zfs umount -a
